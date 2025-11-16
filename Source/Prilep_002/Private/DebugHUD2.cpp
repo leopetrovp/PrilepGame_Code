@@ -28,21 +28,22 @@ void UDebugHUD2::DisplayCurrentTimeAndDay()
         return;
     }
 
-    // ✅ Вече имаме истински FTimeState от Subsystem-а
-    FTimeState TimeState = TimeSystem->GetCurrentTimeState();
+    // ❌ Няма FTimeState тук
+    const int32 CurrentDay = TimeSystem->GetCurrentDay();
+    const ETimeOfDay CurrentBlock = TimeSystem->GetCurrentTimeOfDay();
 
     const UEnum* TimeEnum = StaticEnum<ETimeOfDay>();
     const FString TimeName = TimeEnum
-        ? TimeEnum->GetNameStringByValue(static_cast<int64>(TimeState.Block))
+        ? TimeEnum->GetNameStringByValue(static_cast<int64>(CurrentBlock))
         : TEXT("Invalid");
 
     UE_LOG(LogTemp, Warning, TEXT("Current Day: %d, Current Time: %s"),
-        TimeState.Day,
+        CurrentDay,
         *TimeName);
 
     if (DayText)
     {
-        DayText->SetText(FText::AsNumber(TimeState.Day));
+        DayText->SetText(FText::AsNumber(CurrentDay));
     }
 
     if (TimeText)

@@ -1,80 +1,98 @@
-#pragma once
+﻿#pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "PrilepStoryTypes.h"
+#include "PrilepStoryTypes.h"          // за ETimeOfDay
 #include "TimeDaySubsystem.generated.h"
 
-// Delegate for time change (day/block)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTimeChanged);
+// Състояние на времето в играта – ден + блок + по желание локация
+USTRUCT(BlueprintType)
+struct FTimeState
+{
+    GENERATED_BODY()
 
-// Delegate for location change
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnLocationChanged, FName, NewLocation);
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Time")
+    int32 Day = 1;
 
-/**
- * Subsystem for time/days/visits for Prilep
- */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Time")
+    ETimeOfDay Block = ETimeOfDay::Morning;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Time")
+    FName Location = NAME_None;
+};
+
+// Делегат, който другите класове могат да слушат
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTimeChanged, const FTimeState&, NewState);
+
 UCLASS()
 class PRILEP_002_API UTimeDaySubsystem : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
 
 public:
-    UPROPERTY(BlueprintReadOnly, Category = "Prilep|Time")
+
+    /** === НОВО API (което искаме да ползваме занапред) === */
+
+    UFUNCTION(BlueprintCallable, Category = "Time")
+    FTimeState GetCurrentTimeState() const { return CurrentTimeState; }
+
+    UFUNCTION(BlueprintCallable, Category = "Time")
+    void SetCurrentTimeState(const FTimeState& NewState);
+
+    UFUNCTION(BlueprintCallable, Category = "Time")
+    void AdvanceTimeBlock();     // основната функция за напредване на времето
+
+    UFUNCTION(BlueprintCallable, Category = "Time")
+    int32 GetCurrentDay() const { return CurrentTimeState.Day; }
+
+    UFUNCTION(BlueprintCallable, Category = "Time")
+    ETimeOfDay GetCurrentTimeOfDay() const { return CurrentTimeState.Block; }
+
+
+    /** === СТАРО / ДЕБЪГ API – за да не чупим съществуващия код === */
+
+    // Полета, към които други класове достъпват директно:
+    UPROPERTY(BlueprintReadOnly, Category = "Time|Compat")
     int32 CurrentDay = 1;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Prilep|Time")
+    UPROPERTY(BlueprintReadOnly, Category = "Time|Compat")
     ETimeOfDay CurrentTime = ETimeOfDay::Morning;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Prilep|Time")
-    int32 VisitsToday = 0;
-
-    UPROPERTY(BlueprintReadOnly, Category = "Prilep|Time")
+    UPROPERTY(BlueprintReadOnly, Category = "Time|Compat")
     FName CurrentLocation = NAME_None;
 
-    UPROPERTY(BlueprintReadOnly, Category = "Prilep|Time")
-    FPrilepTimeState State;
+    UPROPERTY(BlueprintReadOnly, Category = "Time|Compat")
+    TArray<FName> VisitsToday;
 
-    UPROPERTY(BlueprintAssignable, Category = "Prilep|Time")
-    FOnTimeChanged OnTimeChanged;
+    // Старото State поле
+    UPROPERTY(BlueprintReadOnly, Category = "Time|Compat")
+    FTimeState State;
 
-    UPROPERTY(BlueprintAssignable, Category = "Prilep|Time")
-    FOnLocationChanged OnLocationChanged;
-
-    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Prilep|Schedule")
-    TArray<FTimeSlotOptions> Schedule;
-
-    virtual void Initialize(FSubsystemCollectionBase& Collection) override;
-
-    UFUNCTION(BlueprintCallable, Category = "Prilep|Time")
-    void ResetToStart();
-
-    UFUNCTION(BlueprintCallable, Category = "Prilep|Time")
-    void GetCurrentVisitOptions(TArray<FVisitOption>& OutOptions) const;
-
-    UFUNCTION(BlueprintCallable, Category = "Prilep|Time")
-    void SetCurrentLocation(FName NewLocation);
-
-    UFUNCTION(BlueprintCallable, Category = "Prilep|Time")
-    void AdvanceTimeBlock();
-
-    // Wrapper methods for backward compatibility
-    UFUNCTION(BlueprintCallable, Category = "Prilep|Time")
+    // Старите функции, които вече имат нова вътрешна логика:
+    UFUNCTION(BlueprintCallable, Category = "Time|Compat")
     void AdvanceBlock() { AdvanceTimeBlock(); }
 
-    UFUNCTION(BlueprintCallable, Category = "Prilep|Time")
-    void SetDayAndBlock(int32 Day, ETimeOfDay Block)
-    {
-        CurrentDay = Day;
-        CurrentTime = Block;
-        State.Day = Day;
-        State.Block = Block;
-        OnTimeChanged.Broadcast();
-    }
+    UFUNCTION(BlueprintCallable, Category = "Time|Compat")
+    void ResetToStart();
 
-    UFUNCTION(BlueprintCallable, Category = "Prilep|Time") // New method to get current time state
-    FPrilepTimeState GetCurrentTimeState() const
-    {
-        return State;
-    }
+    UFUNCTION(BlueprintCallable, Category = "Time|Compat")
+    void SetDayAndBlock(int32 InDay, ETimeOfDay InBlock);
+
+    UFUNCTION(BlueprintCallable, Category = "Time|Compat")
+    void SetCurrentLocation(FName InLocation);
+
+    // TODO: по-късно ще върнем реална логика за VisitOptions
+    UFUNCTION(BlueprintCallable, Category = "Time|Compat")
+    TArray<FName> GetCurrentVisitOptions() const { return VisitsToday; }
+
+    // Делегат, който други класове ползват: TimeSystem->OnTimeChanged.AddDynamic(...)
+    UPROPERTY(BlueprintAssignable, Category = "Time")
+    FOnTimeChanged OnTimeChanged;
+
+private:
+    UPROPERTY()
+    FTimeState CurrentTimeState;
+
+    // помощна функция, за да държи синхронизирани State / CurrentDay / CurrentTime / CurrentLocation
+    void SyncDerivedFields();
 };
