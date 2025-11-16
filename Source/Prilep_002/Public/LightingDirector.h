@@ -19,8 +19,9 @@ protected:
 
     UPROPERTY() TWeakObjectPtr<ADirectionalLight> CachedSun;
 
-    UFUNCTION() void HandleTimeChanged(); // Updated to match the delegate signature
+    UFUNCTION() void OnTimeChanged(const FTimeState& NewState);
     void ApplyLightingForTimeOfDay(ETimeOfDay Block);
+    void SetDirectionalLightForNight();
     void SetDirectionalLight(float Intensity, const FLinearColor& Color, float Temp);
     void TryAutoBindTimeSystem();
 };

@@ -8,7 +8,6 @@
 ALightingDirector::ALightingDirector()
 {
     PrimaryActorTick.bCanEverTick = false;
-}
 
 void ALightingDirector::BeginPlay()
 {
@@ -22,6 +21,7 @@ void ALightingDirector::BeginPlay()
 
     TryAutoBindTimeSystem();
 }
+}
 
 void ALightingDirector::TryAutoBindTimeSystem()
 {
@@ -29,15 +29,15 @@ void ALightingDirector::TryAutoBindTimeSystem()
         if (UGameInstance* GI = W->GetGameInstance())
             if (UTimeDaySubsystem* T = GI->GetSubsystem<UTimeDaySubsystem>())
             {
-                T->OnTimeChanged.AddDynamic(this, &ALightingDirector::HandleTimeChanged);
+                T->OnTimeChanged.AddDynamic(this, &ALightingDirector::OnTimeChanged);
                 ApplyLightingForTimeOfDay(T->State.Block);
             }
 }
 
-void ALightingDirector::HandleTimeChanged()
+void ALightingDirector::OnTimeChanged(const FTimeState& NewState)
 {
-    // Call the function with the current time block
-    ApplyLightingForTimeOfDay(GetWorld()->GetGameInstance()->GetSubsystem<UTimeDaySubsystem>()->CurrentTime);
+    // Use NewState.Day, NewState.Block, NewState.Location instead of any old parameters.
+    ApplyLightingForTimeOfDay(NewState.Block);
 }
 
 void ALightingDirector::ApplyLightingForTimeOfDay(ETimeOfDay Block)

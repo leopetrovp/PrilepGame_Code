@@ -47,7 +47,7 @@ bool UPrilepBPL::SaveSlot(const FString& SlotName)
 
     Save->SavedDay = T->State.Day;
     Save->SavedBlock = T->State.Block;
-    Save->SavedVisits = T->VisitsToday;
+    Save->SavedVisits = T->VisitsToday.Num();
     Save->SavedLocation = T->CurrentLocation;
 
     return UGameplayStatics::SaveGameToSlot(Save, SlotName, /*UserIndex*/0);
@@ -65,7 +65,11 @@ bool UPrilepBPL::LoadSlot(const FString& SlotName)
     if (!Save) return false;
 
     T->SetDayAndBlock(Save->SavedDay, Save->SavedBlock);
-    T->VisitsToday = Save->SavedVisits;
+    if (Save->SavedBlock == ETimeOfDay::Night)
+    {
+        // Handle any specific logic for Night time block if needed
+    }
+    TArray<FName> Visits = T->GetCurrentVisitOptions();
     T->CurrentLocation = Save->SavedLocation;
 
     return true;

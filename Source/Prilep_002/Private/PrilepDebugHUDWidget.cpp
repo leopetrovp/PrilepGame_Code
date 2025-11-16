@@ -124,13 +124,13 @@ FString UPrilepDebugHUDWidget::GetDebugTimeOfDayLabel() const
 {
     if (TimeSystem)
     {
-        FPrilepTimeState CurrentTimeState = TimeSystem->GetCurrentTimeState();
+        FTimeState State = TimeSystem->GetCurrentTimeState();
         return FString::Printf(TEXT("Day %d | %02d:00 | %s"), 
-            CurrentTimeState.Day, 
-            (CurrentTimeState.Block == ETimeOfDay::Morning) ? 6 : 
-            (CurrentTimeState.Block == ETimeOfDay::Afternoon) ? 12 : 
-            (CurrentTimeState.Block == ETimeOfDay::Evening) ? 18 : 24, 
-            *UEnum::GetValueAsString(CurrentTimeState.Block));
+            State.Day, 
+            (State.Block == ETimeOfDay::Morning) ? 6 : 
+            (State.Block == ETimeOfDay::Afternoon) ? 12 : 
+            (State.Block == ETimeOfDay::Evening) ? 18 : 24, 
+            *UEnum::GetValueAsString(State.Block));
     }
     return TEXT("Time of Day: Unavailable");
 }
