@@ -1,67 +1,29 @@
-#include "TimeDaySubsystem.h"
-
-void UTimeDaySubsystem::Initialize(FSubsystemCollectionBase& Collection)
-{
-    Super::Initialize(Collection);
-    ResetToStart();
-}
-
-void UTimeDaySubsystem::ResetToStart()
-{
-    CurrentDay = 1;
-    CurrentTime = ETimeOfDay::Morning;
-    VisitsToday = 0;
-    CurrentLocation = NAME_None;
-
-    State.Day = CurrentDay;
-    State.Block = CurrentTime;
-
-    OnTimeChanged.Broadcast();
-    OnLocationChanged.Broadcast(CurrentLocation);
-}
-
-void UTimeDaySubsystem::GetCurrentVisitOptions(TArray<FVisitOption>& OutOptions) const
-{
-    OutOptions.Reset();
-
-    for (const FTimeSlotOptions& Slot : Schedule)
-    {
-        if (Slot.Day == CurrentDay && Slot.Time == CurrentTime)
-        {
-            OutOptions = Slot.Options;
-            return;
-        }
-    }
-}
-
-void UTimeDaySubsystem::SetCurrentLocation(FName NewLocation)
-{
-    CurrentLocation = NewLocation;
-    OnLocationChanged.Broadcast(CurrentLocation);
-}
+﻿#include "TimeDaySubsystem.h"
 
 void UTimeDaySubsystem::AdvanceTimeBlock()
 {
-    switch (CurrentTime)
+    switch (CurrentTimeState.Block)
     {
     case ETimeOfDay::Morning:
-        CurrentTime = ETimeOfDay::Afternoon;
+        CurrentTimeState.Block = ETimeOfDay::Afternoon;
         break;
 
     case ETimeOfDay::Afternoon:
-        CurrentTime = ETimeOfDay::Evening;
+        CurrentTimeState.Block = ETimeOfDay::Evening;
         break;
 
     case ETimeOfDay::Evening:
+        CurrentTimeState.Block = ETimeOfDay::Morning;
+        ++CurrentTimeState.Day;
+        break;
+
     default:
-        CurrentTime = ETimeOfDay::Morning;
-        ++CurrentDay;
-        VisitsToday = 0;
+        // Ако по някаква причина е в неочаквано състояние – ресетваме
+        CurrentTimeState.Block = ETimeOfDay::Morning;
         break;
     }
 
-    State.Day = CurrentDay;
-    State.Block = CurrentTime;
-
-    OnTimeChanged.Broadcast();
+    UE_LOG(LogTemp, Log, TEXT("AdvanceTimeBlock -> Day %d | TimeOfDay %s"),
+        CurrentTimeState.Day,
+        *UEnum::GetValueAsString(CurrentTimeState.Block));
 }
