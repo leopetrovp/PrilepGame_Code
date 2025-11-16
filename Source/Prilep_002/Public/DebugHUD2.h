@@ -2,30 +2,33 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "PrilepStoryTypes.h"
+#include "TimeDaySubsystem.h"
 #include "DebugHUD2.generated.h"
 
-class UTimeDaySubsystem;
+class UTextBlock;
 
-/**
- * Debug HUD 2.0 – Enhanced Debug HUD widget
- */
 UCLASS()
 class PRILEP_002_API UDebugHUD2 : public UUserWidget
 {
     GENERATED_BODY()
 
-public:
-    UFUNCTION(BlueprintCallable, Category = "DebugHUD")
-    void DisplayCurrentTimeAndDay();
-
-    UFUNCTION(BlueprintCallable, Category = "DebugHUD")
-    void ListVisitOptions();
-
 protected:
     virtual void NativeConstruct() override;
 
-    /** Reference to the time subsystem */
+public:
+    UFUNCTION(BlueprintCallable, Category = "Debug")
+    void DisplayCurrentTimeAndDay();
+
+    UFUNCTION(BlueprintCallable, Category = "Debug")
+    void ListVisitOptions();   // ще я реализираме после
+
+private:
     UPROPERTY()
-    UTimeDaySubsystem* TimeSystem;
+    UTimeDaySubsystem* TimeSystem = nullptr;
+
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* DayText;
+
+    UPROPERTY(meta = (BindWidget))
+    UTextBlock* TimeText;
 };
